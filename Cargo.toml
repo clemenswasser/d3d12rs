@@ -6,4 +6,4 @@ edition = "2018"
 
 [dependencies]
 bindings = { path = "bindings" }
-winit = "*"
+winit = "0.24.0"

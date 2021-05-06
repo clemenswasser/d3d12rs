@@ -1,5 +1,5 @@
 use bindings::{
-    windows::{Abi, Interface, IntoParam},
+    windows::{self, Abi, Interface, IntoParam},
     Windows::Win32::{
         Debug::GetLastError,
         Direct3D11::{ID3DBlob, D3D_FEATURE_LEVEL, D3D_PRIMITIVE_TOPOLOGY},
@@ -51,7 +51,7 @@ const FRAME_COUNT: u32 = 2;
 
 struct Vertex((f32, f32, f32), (f32, f32, f32, f32));
 
-fn main() {
+fn main() -> windows::Result<()> {
     let event_loop = winit::event_loop::EventLoop::new();
     let window = winit::window::WindowBuilder::new()
         .with_visible(false)
@@ -61,18 +61,18 @@ fn main() {
     let window_handle = HWND(window.hwnd() as isize);
 
     if cfg!(debug_asserts) {
-        let debug_interface = unsafe { D3D12GetDebugInterface::<ID3D12Debug3>() }.unwrap();
+        let debug_interface = unsafe { D3D12GetDebugInterface::<ID3D12Debug3>() }?;
         unsafe { debug_interface.EnableDebugLayer() };
         unsafe { debug_interface.SetEnableGPUBasedValidation(true) };
     }
 
-    let factory = create_factory();
-    let device = create_device(&factory);
-    let command_queue = create_command_queue(&device);
-    let swap_chain = create_swap_chain(&window, &factory, &command_queue, window_handle);
+    let factory = create_factory()?;
+    let device = create_device(&factory)?;
+    let command_queue = create_command_queue(&device)?;
+    let swap_chain = create_swap_chain(&window, &factory, &command_queue, window_handle)?;
     let mut frame_index = unsafe { swap_chain.GetCurrentBackBufferIndex() };
-    unsafe { factory.MakeWindowAssociation(window_handle, DXGI_MWA_NO_ALT_ENTER) }.unwrap();
-    let descriptor_heap = create_descriptor_heap(&device);
+    unsafe { factory.MakeWindowAssociation(window_handle, DXGI_MWA_NO_ALT_ENTER) }.ok()?;
+    let descriptor_heap = create_descriptor_heap(&device)?;
     let descriptor_heap_size = unsafe {
         device.GetDescriptorHandleIncrementSize(
             D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
@@ -82,14 +82,13 @@ fn main() {
         create_render_targets(&descriptor_heap, &swap_chain, &device, descriptor_heap_size);
     let command_allocator: ID3D12CommandAllocator = unsafe {
         device.CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT)
-    }
-    .unwrap();
-    let root_signature = create_root_signature(&device);
+    }?;
+    let root_signature = create_root_signature(&device)?;
     let shader_source = include_bytes!("shaders/shader.hlsl");
-    let vertex_shader = compile_shader(shader_source, "VSMain", "vs_5_0");
-    let pixel_shader = compile_shader(shader_source, "PSMain", "ps_5_0");
+    let vertex_shader = compile_shader(shader_source, "VSMain", "vs_5_0")?;
+    let pixel_shader = compile_shader(shader_source, "PSMain", "ps_5_0")?;
     let graphics_pipeline_state =
-        create_graphics_pipeline_state(&root_signature, vertex_shader, pixel_shader, &device);
+        create_graphics_pipeline_state(&root_signature, vertex_shader, pixel_shader, &device)?;
     let command_list: ID3D12GraphicsCommandList = unsafe {
         device.CreateCommandList(
             0,
@@ -97,9 +96,8 @@ fn main() {
             &command_allocator,
             &graphics_pipeline_state,
         )
-    }
-    .unwrap();
-    unsafe { command_list.Close() }.unwrap();
+    }?;
+    unsafe { command_list.Close() }.ok()?;
 
     let window_inner_size = window.inner_size();
     let aspect_ratio = window_inner_size.width / window_inner_size.height;
@@ -144,8 +142,7 @@ fn main() {
             D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
             std::ptr::null(),
         )
-    }
-    .unwrap();
+    }?;
 
     let mut vertex_buffer_data = std::ptr::null_mut();
 
@@ -156,7 +153,7 @@ fn main() {
             &mut vertex_buffer_data,
         )
     }
-    .unwrap();
+    .ok()?;
 
     unsafe {
         vertices
@@ -174,7 +171,7 @@ fn main() {
 
     let mut fence_value = 1;
     let fence: ID3D12Fence =
-        unsafe { device.CreateFence(0, D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE) }.unwrap();
+        unsafe { device.CreateFence(0, D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE) }?;
 
     let fence_event = unsafe { CreateEventW(std::ptr::null_mut(), false, false, None) };
     if fence_event.is_null() {
@@ -342,28 +339,27 @@ fn wait_for_previous_frame(
     *frame_index = unsafe { swap_chain.GetCurrentBackBufferIndex() };
 }
 
-fn create_factory() -> IDXGIFactory6 {
+fn create_factory() -> windows::Result<IDXGIFactory6> {
     let factory_create_flags = if cfg!(debug_assertions) {
         DXGI_CREATE_FACTORY_DEBUG
     } else {
         0
     };
-    let factory: IDXGIFactory6 = unsafe { CreateDXGIFactory2(factory_create_flags) }.unwrap();
-    factory
+
+    Ok(unsafe { CreateDXGIFactory2(factory_create_flags) }?)
 }
 
-fn create_device(factory: &IDXGIFactory6) -> ID3D12Device {
+fn create_device(factory: &IDXGIFactory6) -> windows::Result<ID3D12Device> {
     let adapter: IDXGIAdapter = unsafe {
         factory.EnumAdapterByGpuPreference(
             0,
             DXGI_GPU_PREFERENCE::DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
         )
-    }
-    .unwrap();
+    }?;
 
     if cfg!(debug_assertions) {
         let mut adapter_desc = DXGI_ADAPTER_DESC::default();
-        unsafe { adapter.GetDesc(&mut adapter_desc) }.unwrap();
+        unsafe { adapter.GetDesc(&mut adapter_desc) }.ok()?;
         println!(
             "Using adapter: {}",
             std::ffi::OsString::from_wide(&adapter_desc.Description)
@@ -372,17 +368,17 @@ fn create_device(factory: &IDXGIFactory6) -> ID3D12Device {
         );
     }
 
-    unsafe { D3D12CreateDevice(&adapter, D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_12_1) }.unwrap()
+    Ok(unsafe { D3D12CreateDevice(&adapter, D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_12_1) }?)
 }
 
-fn create_command_queue(device: &ID3D12Device) -> ID3D12CommandQueue {
+fn create_command_queue(device: &ID3D12Device) -> windows::Result<ID3D12CommandQueue> {
     let command_queue_desc = D3D12_COMMAND_QUEUE_DESC {
         Flags: D3D12_COMMAND_QUEUE_FLAGS::D3D12_COMMAND_QUEUE_FLAG_NONE,
         Type: D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT,
         ..Default::default()
     };
 
-    unsafe { device.CreateCommandQueue(&command_queue_desc) }.unwrap()
+    Ok(unsafe { device.CreateCommandQueue(&command_queue_desc) }?)
 }
 
 fn create_swap_chain(
@@ -390,7 +386,7 @@ fn create_swap_chain(
     factory: &IDXGIFactory6,
     command_queue: &ID3D12CommandQueue,
     window_handle: HWND,
-) -> IDXGISwapChain3 {
+) -> windows::Result<IDXGISwapChain3> {
     let window_inner_size = window.inner_size();
     let swap_chain_desc = DXGI_SWAP_CHAIN_DESC1 {
         Width: window_inner_size.width,
@@ -418,13 +414,12 @@ fn create_swap_chain(
             &mut swap_chain,
         )
     }
-    .and_some(swap_chain)
-    .unwrap();
+    .and_some(swap_chain)?;
 
-    swap_chain.cast().unwrap()
+    Ok(swap_chain.cast()?)
 }
 
-fn create_descriptor_heap(device: &ID3D12Device) -> ID3D12DescriptorHeap {
+fn create_descriptor_heap(device: &ID3D12Device) -> windows::Result<ID3D12DescriptorHeap> {
     let descriptor_heap_desc = D3D12_DESCRIPTOR_HEAP_DESC {
         NumDescriptors: FRAME_COUNT,
         Type: D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
@@ -432,7 +427,7 @@ fn create_descriptor_heap(device: &ID3D12Device) -> ID3D12DescriptorHeap {
         ..Default::default()
     };
 
-    unsafe { device.CreateDescriptorHeap(&descriptor_heap_desc) }.unwrap()
+    Ok(unsafe { device.CreateDescriptorHeap(&descriptor_heap_desc) }?)
 }
 
 fn create_render_targets(
@@ -444,8 +439,8 @@ fn create_render_targets(
     let mut descriptor_handle = unsafe { descriptor_heap.GetCPUDescriptorHandleForHeapStart() };
 
     (0..FRAME_COUNT)
-        .map(|i| {
-            let render_target = unsafe { swap_chain.GetBuffer(i) }.unwrap();
+        .filter_map(|i| {
+            let render_target = unsafe { swap_chain.GetBuffer(i) }.ok()?;
 
             unsafe {
                 device.CreateRenderTargetView(&render_target, std::ptr::null(), descriptor_handle)
@@ -453,12 +448,12 @@ fn create_render_targets(
 
             descriptor_handle.ptr += descriptor_heap_size as usize;
 
-            render_target
+            Some(render_target)
         })
         .collect()
 }
 
-fn create_root_signature(device: &ID3D12Device) -> ID3D12RootSignature {
+fn create_root_signature(device: &ID3D12Device) -> windows::Result<ID3D12RootSignature> {
     let root_signature_desc = D3D12_ROOT_SIGNATURE_DESC {
         Flags:
             D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT,
@@ -474,19 +469,17 @@ fn create_root_signature(device: &ID3D12Device) -> ID3D12RootSignature {
             &mut error,
         )
     }
-    .and_some(signature)
-    .unwrap();
+    .and_some(signature)?;
 
-    unsafe {
+    Ok(unsafe {
         device.CreateRootSignature(0, signature.GetBufferPointer(), signature.GetBufferSize())
-    }
-    .unwrap()
+    }?)
 }
 fn compile_shader<'a>(
     shader_source: &[u8],
     shader_entry_point: impl IntoParam<'a, PSTR>,
     shader_target_name: impl IntoParam<'a, PSTR>,
-) -> ID3DBlob {
+) -> windows::Result<ID3DBlob> {
     let compiler_flags = if cfg!(debug_assertions) {
         D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION
     } else {
@@ -496,7 +489,7 @@ fn compile_shader<'a>(
     let mut shader = None;
     let mut shader_error = None;
 
-    match unsafe {
+    let shader = unsafe {
         D3DCompile2(
             shader_source.as_ptr().cast(),
             shader_source.len(),
@@ -514,26 +507,22 @@ fn compile_shader<'a>(
             &mut shader_error,
         )
     }
-    .and_some(shader)
-    {
-        Ok(shader) => shader,
-        Err(error) => {
-            if let Some(error) = shader_error {
-                panic!(
-                    "Error during shader compilation: {}",
-                    unsafe {
-                        std::str::from_utf8(std::slice::from_raw_parts(
-                            error.GetBufferPointer() as *const u8,
-                            error.GetBufferSize(),
-                        ))
-                    }
-                    .unwrap()
-                )
-            } else {
-                panic!("{}", error)
+    .and_some(shader);
+
+    if let Some(shader_error) = shader_error {
+        eprintln!(
+            "Error during shader compilation: {}",
+            unsafe {
+                std::str::from_utf8(std::slice::from_raw_parts(
+                    shader_error.GetBufferPointer() as *const u8,
+                    shader_error.GetBufferSize(),
+                ))
             }
-        }
+            .unwrap()
+        )
     }
+
+    Ok(shader?)
 }
 
 fn create_graphics_pipeline_state(
@@ -541,7 +530,7 @@ fn create_graphics_pipeline_state(
     vertex_shader: ID3DBlob,
     pixel_shader: ID3DBlob,
     device: &ID3D12Device,
-) -> ID3D12PipelineState {
+) -> windows::Result<ID3D12PipelineState> {
     let mut input_element_descs = [
         D3D12_INPUT_ELEMENT_DESC {
             SemanticName: PSTR(b"POSITION\0".as_ptr() as _),
@@ -562,6 +551,7 @@ fn create_graphics_pipeline_state(
             InstanceDataStepRate: 0,
         },
     ];
+
     let graphics_pipeline_state_desc = D3D12_GRAPHICS_PIPELINE_STATE_DESC {
         InputLayout: D3D12_INPUT_LAYOUT_DESC {
             pInputElementDescs: input_element_descs.as_mut_ptr(),
@@ -628,5 +618,5 @@ fn create_graphics_pipeline_state(
         ..Default::default()
     };
 
-    unsafe { device.CreateGraphicsPipelineState(&graphics_pipeline_state_desc) }.unwrap()
+    Ok(unsafe { device.CreateGraphicsPipelineState(&graphics_pipeline_state_desc) }?)
 }
