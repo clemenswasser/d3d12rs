@@ -1,50 +1,65 @@
+use std::os::windows::prelude::OsStringExt;
+
 use bindings::{
     windows::{self, Abi, Interface, IntoParam},
     Windows::Win32::{
-        Debug::GetLastError,
-        Direct3D11::{ID3DBlob, D3D_FEATURE_LEVEL, D3D_PRIMITIVE_TOPOLOGY},
-        Direct3D12::{
-            D3D12CreateDevice, D3D12GetDebugInterface, D3D12SerializeRootSignature,
-            ID3D12CommandAllocator, ID3D12CommandQueue, ID3D12Debug3, ID3D12DescriptorHeap,
-            ID3D12Device, ID3D12Fence, ID3D12GraphicsCommandList, ID3D12PipelineState,
-            ID3D12Resource, ID3D12RootSignature, D3D12_BLEND, D3D12_BLEND_DESC, D3D12_BLEND_OP,
-            D3D12_COLOR_WRITE_ENABLE, D3D12_COMMAND_LIST_TYPE, D3D12_COMMAND_QUEUE_DESC,
-            D3D12_COMMAND_QUEUE_FLAGS, D3D12_CONSERVATIVE_RASTERIZATION_MODE,
-            D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CPU_PAGE_PROPERTY, D3D12_CULL_MODE,
-            D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
-            D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS, D3D12_DEPTH_STENCIL_DESC,
-            D3D12_DESCRIPTOR_HEAP_DESC, D3D12_DESCRIPTOR_HEAP_FLAGS, D3D12_DESCRIPTOR_HEAP_TYPE,
-            D3D12_FENCE_FLAGS, D3D12_FILL_MODE, D3D12_GRAPHICS_PIPELINE_STATE_DESC,
-            D3D12_HEAP_FLAGS, D3D12_HEAP_PROPERTIES, D3D12_HEAP_TYPE, D3D12_INPUT_CLASSIFICATION,
-            D3D12_INPUT_ELEMENT_DESC, D3D12_INPUT_LAYOUT_DESC, D3D12_LOGIC_OP, D3D12_MAX_DEPTH,
-            D3D12_MEMORY_POOL, D3D12_MIN_DEPTH, D3D12_PRIMITIVE_TOPOLOGY_TYPE, D3D12_RANGE,
-            D3D12_RASTERIZER_DESC, D3D12_RENDER_TARGET_BLEND_DESC, D3D12_RESOURCE_BARRIER,
-            D3D12_RESOURCE_BARRIER_0, D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
-            D3D12_RESOURCE_BARRIER_FLAGS, D3D12_RESOURCE_BARRIER_TYPE, D3D12_RESOURCE_DESC,
-            D3D12_RESOURCE_DIMENSION, D3D12_RESOURCE_FLAGS, D3D12_RESOURCE_STATES,
-            D3D12_RESOURCE_TRANSITION_BARRIER, D3D12_ROOT_SIGNATURE_DESC,
-            D3D12_ROOT_SIGNATURE_FLAGS, D3D12_SHADER_BYTECODE, D3D12_TEXTURE_LAYOUT,
-            D3D12_VERTEX_BUFFER_VIEW, D3D12_VIEWPORT, D3D_ROOT_SIGNATURE_VERSION,
+        Graphics::{
+            Direct3D11::{ID3DBlob, D3D_FEATURE_LEVEL_12_1, D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST},
+            Direct3D12::{
+                D3D12CreateDevice, D3D12GetDebugInterface, D3D12SerializeRootSignature,
+                ID3D12CommandAllocator, ID3D12CommandQueue, ID3D12Debug3, ID3D12DescriptorHeap,
+                ID3D12Device, ID3D12Fence, ID3D12GraphicsCommandList, ID3D12PipelineState,
+                ID3D12Resource, ID3D12RootSignature, D3D12_BLEND_DESC, D3D12_BLEND_ONE,
+                D3D12_BLEND_OP_ADD, D3D12_BLEND_ZERO, D3D12_COLOR_WRITE_ENABLE_ALL,
+                D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_QUEUE_DESC,
+                D3D12_COMMAND_QUEUE_FLAG_NONE, D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF,
+                D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_CPU_PAGE_PROPERTY_UNKNOWN, D3D12_CULL_MODE_BACK,
+                D3D12_DEFAULT_DEPTH_BIAS, D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
+                D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS, D3D12_DEPTH_STENCIL_DESC,
+                D3D12_DESCRIPTOR_HEAP_DESC, D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
+                D3D12_DESCRIPTOR_HEAP_TYPE_RTV, D3D12_FENCE_FLAG_NONE, D3D12_FILL_MODE_SOLID,
+                D3D12_GRAPHICS_PIPELINE_STATE_DESC, D3D12_HEAP_FLAG_NONE, D3D12_HEAP_PROPERTIES,
+                D3D12_HEAP_TYPE_UPLOAD, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+                D3D12_INPUT_ELEMENT_DESC, D3D12_INPUT_LAYOUT_DESC, D3D12_LOGIC_OP_NOOP,
+                D3D12_MAX_DEPTH, D3D12_MEMORY_POOL_UNKNOWN, D3D12_MIN_DEPTH,
+                D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE, D3D12_RANGE, D3D12_RASTERIZER_DESC,
+                D3D12_RENDER_TARGET_BLEND_DESC, D3D12_RESOURCE_BARRIER, D3D12_RESOURCE_BARRIER_0,
+                D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES, D3D12_RESOURCE_BARRIER_FLAG_NONE,
+                D3D12_RESOURCE_BARRIER_TYPE_TRANSITION, D3D12_RESOURCE_DESC,
+                D3D12_RESOURCE_DIMENSION_BUFFER, D3D12_RESOURCE_FLAG_NONE,
+                D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_PRESENT,
+                D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_TRANSITION_BARRIER,
+                D3D12_ROOT_SIGNATURE_DESC,
+                D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT,
+                D3D12_SHADER_BYTECODE, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_VERTEX_BUFFER_VIEW,
+                D3D12_VIEWPORT, D3D_ROOT_SIGNATURE_VERSION_1,
+            },
+            Dxgi::{
+                CreateDXGIFactory2, IDXGIAdapter, IDXGIFactory6, IDXGISwapChain3,
+                DXGI_ADAPTER_DESC, DXGI_CREATE_FACTORY_DEBUG, DXGI_FORMAT,
+                DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R32G32B32_FLOAT,
+                DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN,
+                DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, DXGI_MWA_NO_ALT_ENTER, DXGI_SAMPLE_DESC,
+                DXGI_SWAP_CHAIN_DESC1, DXGI_SWAP_EFFECT_FLIP_DISCARD,
+                DXGI_USAGE_RENDER_TARGET_OUTPUT,
+            },
+            Hlsl::{D3DCompile2, D3DCOMPILE_DEBUG, D3DCOMPILE_SKIP_OPTIMIZATION},
         },
-        Direct3DHlsl::{D3DCompile2, D3DCOMPILE_DEBUG, D3DCOMPILE_SKIP_OPTIMIZATION},
-        DisplayDevices::RECT,
-        Dxgi::{
-            CreateDXGIFactory2, IDXGIAdapter, IDXGIFactory6, IDXGISwapChain3, DXGI_ADAPTER_DESC,
-            DXGI_CREATE_FACTORY_DEBUG, DXGI_FORMAT, DXGI_GPU_PREFERENCE, DXGI_MWA_NO_ALT_ENTER,
-            DXGI_SAMPLE_DESC, DXGI_SWAP_CHAIN_DESC1, DXGI_SWAP_EFFECT,
-            DXGI_USAGE_RENDER_TARGET_OUTPUT,
+        System::{
+            Diagnostics::Debug::GetLastError,
+            SystemServices::{HANDLE, PSTR},
+            Threading::{CreateEventW, WaitForSingleObject},
+            WindowsProgramming::{CloseHandle, INFINITE},
         },
-        SystemServices::{CreateEventW, WaitForSingleObject, HANDLE, PSTR},
-        WindowsAndMessaging::HWND,
-        WindowsProgramming::{CloseHandle, INFINITE},
+        UI::{DisplayDevices::RECT, WindowsAndMessaging::HWND},
     },
 };
 
-use std::os::windows::prelude::*;
 use winit::{
     event::{Event, WindowEvent},
-    event_loop::ControlFlow,
+    event_loop::{ControlFlow, EventLoop},
     platform::windows::WindowExtWindows,
+    window::{Window, WindowBuilder},
 };
 
 const FRAME_COUNT: u32 = 2;
@@ -52,8 +67,8 @@ const FRAME_COUNT: u32 = 2;
 struct Vertex((f32, f32, f32), (f32, f32, f32, f32));
 
 fn main() -> windows::Result<()> {
-    let event_loop = winit::event_loop::EventLoop::new();
-    let window = winit::window::WindowBuilder::new()
+    let event_loop = EventLoop::new();
+    let window = WindowBuilder::new()
         .with_visible(false)
         .with_title("DirectX 12 Rust example")
         .build(&event_loop)
@@ -61,7 +76,7 @@ fn main() -> windows::Result<()> {
     let window_handle = HWND(window.hwnd() as isize);
 
     if cfg!(debug_asserts) {
-        let debug_interface = unsafe { D3D12GetDebugInterface::<ID3D12Debug3>() }?;
+        let debug_interface: ID3D12Debug3 = unsafe { D3D12GetDebugInterface() }?;
         unsafe { debug_interface.EnableDebugLayer() };
         unsafe { debug_interface.SetEnableGPUBasedValidation(true) };
     }
@@ -73,16 +88,12 @@ fn main() -> windows::Result<()> {
     let mut frame_index = unsafe { swap_chain.GetCurrentBackBufferIndex() };
     unsafe { factory.MakeWindowAssociation(window_handle, DXGI_MWA_NO_ALT_ENTER) }.ok()?;
     let descriptor_heap = create_descriptor_heap(&device)?;
-    let descriptor_heap_size = unsafe {
-        device.GetDescriptorHandleIncrementSize(
-            D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
-        )
-    };
+    let descriptor_heap_size =
+        unsafe { device.GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) };
     let render_targets =
         create_render_targets(&descriptor_heap, &swap_chain, &device, descriptor_heap_size);
-    let command_allocator: ID3D12CommandAllocator = unsafe {
-        device.CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT)
-    }?;
+    let command_allocator: ID3D12CommandAllocator =
+        unsafe { device.CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT) }?;
     let root_signature = create_root_signature(&device)?;
     let shader_source = include_bytes!("shaders/shader.hlsl");
     let vertex_shader = compile_shader(shader_source, "VSMain", "vs_5_0")?;
@@ -92,7 +103,7 @@ fn main() -> windows::Result<()> {
     let command_list: ID3D12GraphicsCommandList = unsafe {
         device.CreateCommandList(
             0,
-            D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT,
+            D3D12_COMMAND_LIST_TYPE_DIRECT,
             &command_allocator,
             &graphics_pipeline_state,
         )
@@ -117,29 +128,29 @@ fn main() -> windows::Result<()> {
     let vertex_buffer: ID3D12Resource = unsafe {
         device.CreateCommittedResource(
             &D3D12_HEAP_PROPERTIES {
-                Type: D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD,
-                CPUPageProperty: D3D12_CPU_PAGE_PROPERTY::D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
-                MemoryPoolPreference: D3D12_MEMORY_POOL::D3D12_MEMORY_POOL_UNKNOWN,
+                Type: D3D12_HEAP_TYPE_UPLOAD,
+                CPUPageProperty: D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+                MemoryPoolPreference: D3D12_MEMORY_POOL_UNKNOWN,
                 CreationNodeMask: 1,
                 VisibleNodeMask: 1,
             },
-            D3D12_HEAP_FLAGS::D3D12_HEAP_FLAG_NONE,
+            D3D12_HEAP_FLAG_NONE,
             &D3D12_RESOURCE_DESC {
-                Dimension: D3D12_RESOURCE_DIMENSION::D3D12_RESOURCE_DIMENSION_BUFFER,
+                Dimension: D3D12_RESOURCE_DIMENSION_BUFFER,
                 Alignment: 0,
                 Width: std::mem::size_of_val(&vertices) as u64,
                 Height: 1,
                 DepthOrArraySize: 1,
                 MipLevels: 1,
-                Format: DXGI_FORMAT::DXGI_FORMAT_UNKNOWN,
+                Format: DXGI_FORMAT_UNKNOWN,
                 SampleDesc: DXGI_SAMPLE_DESC {
                     Count: 1,
                     Quality: 0,
                 },
-                Layout: D3D12_TEXTURE_LAYOUT::D3D12_TEXTURE_LAYOUT_ROW_MAJOR,
-                Flags: D3D12_RESOURCE_FLAGS::D3D12_RESOURCE_FLAG_NONE,
+                Layout: D3D12_TEXTURE_LAYOUT_ROW_MAJOR,
+                Flags: D3D12_RESOURCE_FLAG_NONE,
             },
-            D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
             std::ptr::null(),
         )
     }?;
@@ -170,8 +181,7 @@ fn main() -> windows::Result<()> {
     };
 
     let mut fence_value = 1;
-    let fence: ID3D12Fence =
-        unsafe { device.CreateFence(0, D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE) }?;
+    let fence: ID3D12Fence = unsafe { device.CreateFence(0, D3D12_FENCE_FLAG_NONE) }?;
 
     let fence_event = unsafe { CreateEventW(std::ptr::null_mut(), false, false, None) };
     if fence_event.is_null() {
@@ -225,16 +235,13 @@ fn main() -> windows::Result<()> {
                     command_list.ResourceBarrier(
                         1,
                         &D3D12_RESOURCE_BARRIER {
-                            Type:
-                                D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
-                            Flags: D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE,
+                            Type: D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
+                            Flags: D3D12_RESOURCE_BARRIER_FLAG_NONE,
                             Anonymous: D3D12_RESOURCE_BARRIER_0 {
                                 Transition: D3D12_RESOURCE_TRANSITION_BARRIER {
                                     pResource: Some(render_targets[frame_index as usize].clone()),
-                                    StateBefore:
-                                        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT,
-                                    StateAfter:
-                                        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET,
+                                    StateBefore: D3D12_RESOURCE_STATE_PRESENT,
+                                    StateAfter: D3D12_RESOURCE_STATE_RENDER_TARGET,
                                     Subresource: D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
                                 }
                                 .abi(),
@@ -259,11 +266,7 @@ fn main() -> windows::Result<()> {
                         std::ptr::null(),
                     )
                 };
-                unsafe {
-                    command_list.IASetPrimitiveTopology(
-                        D3D_PRIMITIVE_TOPOLOGY::D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST,
-                    )
-                };
+                unsafe { command_list.IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST) };
                 unsafe { command_list.IASetVertexBuffers(0, 1, &vertex_buffer_view) };
                 unsafe { command_list.DrawInstanced(3, 1, 0, 0) };
 
@@ -271,15 +274,13 @@ fn main() -> windows::Result<()> {
                     command_list.ResourceBarrier(
                         1,
                         &D3D12_RESOURCE_BARRIER {
-                            Type:
-                                D3D12_RESOURCE_BARRIER_TYPE::D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
-                            Flags: D3D12_RESOURCE_BARRIER_FLAGS::D3D12_RESOURCE_BARRIER_FLAG_NONE,
+                            Type: D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
+                            Flags: D3D12_RESOURCE_BARRIER_FLAG_NONE,
                             Anonymous: D3D12_RESOURCE_BARRIER_0 {
                                 Transition: D3D12_RESOURCE_TRANSITION_BARRIER {
                                     pResource: Some(render_targets[frame_index as usize].clone()),
-                                    StateBefore:
-                                        D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET,
-                                    StateAfter: D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PRESENT,
+                                    StateBefore: D3D12_RESOURCE_STATE_RENDER_TARGET,
+                                    StateAfter: D3D12_RESOURCE_STATE_PRESENT,
                                     Subresource: D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
                                 }
                                 .abi(),
@@ -350,12 +351,8 @@ fn create_factory() -> windows::Result<IDXGIFactory6> {
 }
 
 fn create_device(factory: &IDXGIFactory6) -> windows::Result<ID3D12Device> {
-    let adapter: IDXGIAdapter = unsafe {
-        factory.EnumAdapterByGpuPreference(
-            0,
-            DXGI_GPU_PREFERENCE::DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
-        )
-    }?;
+    let adapter: IDXGIAdapter =
+        unsafe { factory.EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE) }?;
 
     if cfg!(debug_assertions) {
         let mut adapter_desc = DXGI_ADAPTER_DESC::default();
@@ -368,13 +365,13 @@ fn create_device(factory: &IDXGIFactory6) -> windows::Result<ID3D12Device> {
         );
     }
 
-    Ok(unsafe { D3D12CreateDevice(&adapter, D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_12_1) }?)
+    Ok(unsafe { D3D12CreateDevice(&adapter, D3D_FEATURE_LEVEL_12_1) }?)
 }
 
 fn create_command_queue(device: &ID3D12Device) -> windows::Result<ID3D12CommandQueue> {
     let command_queue_desc = D3D12_COMMAND_QUEUE_DESC {
-        Flags: D3D12_COMMAND_QUEUE_FLAGS::D3D12_COMMAND_QUEUE_FLAG_NONE,
-        Type: D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT,
+        Flags: D3D12_COMMAND_QUEUE_FLAG_NONE,
+        Type: D3D12_COMMAND_LIST_TYPE_DIRECT,
         ..Default::default()
     };
 
@@ -382,7 +379,7 @@ fn create_command_queue(device: &ID3D12Device) -> windows::Result<ID3D12CommandQ
 }
 
 fn create_swap_chain(
-    window: &winit::window::Window,
+    window: &Window,
     factory: &IDXGIFactory6,
     command_queue: &ID3D12CommandQueue,
     window_handle: HWND,
@@ -391,14 +388,14 @@ fn create_swap_chain(
     let swap_chain_desc = DXGI_SWAP_CHAIN_DESC1 {
         Width: window_inner_size.width,
         Height: window_inner_size.height,
-        Format: DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM,
+        Format: DXGI_FORMAT_R8G8B8A8_UNORM,
         SampleDesc: DXGI_SAMPLE_DESC {
             Count: 1,
             ..Default::default()
         },
         BufferUsage: DXGI_USAGE_RENDER_TARGET_OUTPUT,
         BufferCount: FRAME_COUNT,
-        SwapEffect: DXGI_SWAP_EFFECT::DXGI_SWAP_EFFECT_FLIP_DISCARD,
+        SwapEffect: DXGI_SWAP_EFFECT_FLIP_DISCARD,
         ..Default::default()
     };
 
@@ -422,8 +419,8 @@ fn create_swap_chain(
 fn create_descriptor_heap(device: &ID3D12Device) -> windows::Result<ID3D12DescriptorHeap> {
     let descriptor_heap_desc = D3D12_DESCRIPTOR_HEAP_DESC {
         NumDescriptors: FRAME_COUNT,
-        Type: D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
-        Flags: D3D12_DESCRIPTOR_HEAP_FLAGS::D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
+        Type: D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
+        Flags: D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
         ..Default::default()
     };
 
@@ -455,8 +452,7 @@ fn create_render_targets(
 
 fn create_root_signature(device: &ID3D12Device) -> windows::Result<ID3D12RootSignature> {
     let root_signature_desc = D3D12_ROOT_SIGNATURE_DESC {
-        Flags:
-            D3D12_ROOT_SIGNATURE_FLAGS::D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT,
+        Flags: D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT,
         ..Default::default()
     };
     let mut signature = None;
@@ -464,7 +460,7 @@ fn create_root_signature(device: &ID3D12Device) -> windows::Result<ID3D12RootSig
     let signature = unsafe {
         D3D12SerializeRootSignature(
             &root_signature_desc,
-            D3D_ROOT_SIGNATURE_VERSION::D3D_ROOT_SIGNATURE_VERSION_1,
+            D3D_ROOT_SIGNATURE_VERSION_1,
             &mut signature,
             &mut error,
         )
@@ -535,19 +531,19 @@ fn create_graphics_pipeline_state(
         D3D12_INPUT_ELEMENT_DESC {
             SemanticName: PSTR(b"POSITION\0".as_ptr() as _),
             SemanticIndex: 0,
-            Format: DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT,
+            Format: DXGI_FORMAT_R32G32B32_FLOAT,
             InputSlot: 0,
             AlignedByteOffset: 0,
-            InputSlotClass: D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+            InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
             InstanceDataStepRate: 0,
         },
         D3D12_INPUT_ELEMENT_DESC {
             SemanticName: PSTR(b"COLOR\0".as_ptr() as _),
             SemanticIndex: 0,
-            Format: DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT,
+            Format: DXGI_FORMAT_R32G32B32A32_FLOAT,
             InputSlot: 0,
             AlignedByteOffset: 12,
-            InputSlotClass: D3D12_INPUT_CLASSIFICATION::D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+            InputSlotClass: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
             InstanceDataStepRate: 0,
         },
     ];
@@ -567,8 +563,8 @@ fn create_graphics_pipeline_state(
             BytecodeLength: unsafe { pixel_shader.GetBufferSize() },
         },
         RasterizerState: D3D12_RASTERIZER_DESC {
-            FillMode: D3D12_FILL_MODE::D3D12_FILL_MODE_SOLID,
-            CullMode: D3D12_CULL_MODE::D3D12_CULL_MODE_BACK,
+            FillMode: D3D12_FILL_MODE_SOLID,
+            CullMode: D3D12_CULL_MODE_BACK,
             FrontCounterClockwise: false.into(),
             DepthBias: D3D12_DEFAULT_DEPTH_BIAS as i32,
             DepthBiasClamp: D3D12_DEFAULT_DEPTH_BIAS_CLAMP,
@@ -577,8 +573,7 @@ fn create_graphics_pipeline_state(
             MultisampleEnable: false.into(),
             AntialiasedLineEnable: false.into(),
             ForcedSampleCount: 0,
-            ConservativeRaster:
-                D3D12_CONSERVATIVE_RASTERIZATION_MODE::D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF,
+            ConservativeRaster: D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF,
         },
         BlendState: D3D12_BLEND_DESC {
             AlphaToCoverageEnable: false.into(),
@@ -586,15 +581,14 @@ fn create_graphics_pipeline_state(
             RenderTarget: [D3D12_RENDER_TARGET_BLEND_DESC {
                 BlendEnable: false.into(),
                 LogicOpEnable: false.into(),
-                SrcBlend: D3D12_BLEND::D3D12_BLEND_ONE,
-                DestBlend: D3D12_BLEND::D3D12_BLEND_ZERO,
-                BlendOp: D3D12_BLEND_OP::D3D12_BLEND_OP_ADD,
-                SrcBlendAlpha: D3D12_BLEND::D3D12_BLEND_ONE,
-                DestBlendAlpha: D3D12_BLEND::D3D12_BLEND_ZERO,
-                BlendOpAlpha: D3D12_BLEND_OP::D3D12_BLEND_OP_ADD,
-                LogicOp: D3D12_LOGIC_OP::D3D12_LOGIC_OP_NOOP,
-                RenderTargetWriteMask: D3D12_COLOR_WRITE_ENABLE::D3D12_COLOR_WRITE_ENABLE_ALL.0
-                    as u8,
+                SrcBlend: D3D12_BLEND_ONE,
+                DestBlend: D3D12_BLEND_ZERO,
+                BlendOp: D3D12_BLEND_OP_ADD,
+                SrcBlendAlpha: D3D12_BLEND_ONE,
+                DestBlendAlpha: D3D12_BLEND_ZERO,
+                BlendOpAlpha: D3D12_BLEND_OP_ADD,
+                LogicOp: D3D12_LOGIC_OP_NOOP,
+                RenderTargetWriteMask: D3D12_COLOR_WRITE_ENABLE_ALL.0 as u8,
             }; 8],
         },
         DepthStencilState: D3D12_DEPTH_STENCIL_DESC {
@@ -602,13 +596,12 @@ fn create_graphics_pipeline_state(
             StencilEnable: false.into(),
             ..Default::default()
         },
-        SampleMask: std::u32::MAX,
-        PrimitiveTopologyType:
-            D3D12_PRIMITIVE_TOPOLOGY_TYPE::D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
+        SampleMask: u32::MAX,
+        PrimitiveTopologyType: D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE,
         NumRenderTargets: 1,
         RTVFormats: {
             let mut rtv_formats = [DXGI_FORMAT::default(); 8];
-            rtv_formats[0] = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+            rtv_formats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
             rtv_formats
         },
         SampleDesc: DXGI_SAMPLE_DESC {
