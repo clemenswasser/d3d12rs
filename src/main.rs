@@ -330,7 +330,7 @@ fn wait_for_previous_frame(
     frame_index: &mut u32,
     swap_chain: &IDXGISwapChain3,
 ) {
-    let previous_fence_value = fence_value.clone();
+    let previous_fence_value = *fence_value;
     unsafe { command_queue.Signal(fence, previous_fence_value).unwrap() };
     *fence_value += 1;
     if unsafe { fence.GetCompletedValue() } < previous_fence_value {
@@ -347,7 +347,7 @@ fn create_factory() -> windows::Result<IDXGIFactory6> {
         0
     };
 
-    Ok(unsafe { CreateDXGIFactory2(factory_create_flags) }?)
+    unsafe { CreateDXGIFactory2(factory_create_flags) }
 }
 
 fn create_device(factory: &IDXGIFactory6) -> windows::Result<ID3D12Device> {
@@ -365,7 +365,7 @@ fn create_device(factory: &IDXGIFactory6) -> windows::Result<ID3D12Device> {
         );
     }
 
-    Ok(unsafe { D3D12CreateDevice(&adapter, D3D_FEATURE_LEVEL_12_1) }?)
+    unsafe { D3D12CreateDevice(&adapter, D3D_FEATURE_LEVEL_12_1) }
 }
 
 fn create_command_queue(device: &ID3D12Device) -> windows::Result<ID3D12CommandQueue> {
@@ -375,7 +375,7 @@ fn create_command_queue(device: &ID3D12Device) -> windows::Result<ID3D12CommandQ
         ..Default::default()
     };
 
-    Ok(unsafe { device.CreateCommandQueue(&command_queue_desc) }?)
+    unsafe { device.CreateCommandQueue(&command_queue_desc) }
 }
 
 fn create_swap_chain(
@@ -413,7 +413,7 @@ fn create_swap_chain(
     }
     .and_some(swap_chain)?;
 
-    Ok(swap_chain.cast()?)
+    swap_chain.cast()
 }
 
 fn create_descriptor_heap(device: &ID3D12Device) -> windows::Result<ID3D12DescriptorHeap> {
@@ -424,7 +424,7 @@ fn create_descriptor_heap(device: &ID3D12Device) -> windows::Result<ID3D12Descri
         ..Default::default()
     };
 
-    Ok(unsafe { device.CreateDescriptorHeap(&descriptor_heap_desc) }?)
+    unsafe { device.CreateDescriptorHeap(&descriptor_heap_desc) }
 }
 
 fn create_render_targets(
@@ -467,9 +467,9 @@ fn create_root_signature(device: &ID3D12Device) -> windows::Result<ID3D12RootSig
     }
     .and_some(signature)?;
 
-    Ok(unsafe {
+    unsafe {
         device.CreateRootSignature(0, signature.GetBufferPointer(), signature.GetBufferSize())
-    }?)
+    }
 }
 fn compile_shader<'a>(
     shader_source: &[u8],
@@ -518,7 +518,7 @@ fn compile_shader<'a>(
         )
     }
 
-    Ok(shader?)
+    shader
 }
 
 fn create_graphics_pipeline_state(
@@ -611,5 +611,5 @@ fn create_graphics_pipeline_state(
         ..Default::default()
     };
 
-    Ok(unsafe { device.CreateGraphicsPipelineState(&graphics_pipeline_state_desc) }?)
+    unsafe { device.CreateGraphicsPipelineState(&graphics_pipeline_state_desc) }
 }
